@@ -1,28 +1,28 @@
 介绍：
 
-vless+tcp+tls 与 trojan+tcp+tls 两种基础回落应用：Xray\v2ray 前置（监听443端口），以 h2 或 http/1.1 自适应协商连接，非 Xray\v2ray 的 web 连接回落给 caddy（即解除 tls 后的 web 连接转给 caddy 处理）），tls 由 vless+tcp+tls 或 trojan+tcp+tls 提供及处理。
+本示例配置包含 vless+tcp+tls 或 vless+tcp+xtls 与 trojan+tcp+tls 或 trojan+tcp+xtls 应用。v2ray 或 Xray 服务端前置（监听 443 端口）处理来自墙内的 HTTPS 请求，如果是合法的 v2ray 或 Xray 客户端请求，那么为该请求提供服务（科学上网）；否则将已解除 TLS/XTLS 的流量请求回落（转发）给 caddy，由 caddy 为其提供 WEB 服务。
 
 原理：
 
-默认流程：Xray\v2ray client <------ tcp+tls ------> Xray\v2ray server  
-匹配流程：web client <----------- https ----------> Xray\v2ray server <-- 回落 --> caddy（web server）
+默认流程：v2ray/Xray client <------ TCP+TLS（HTTPS） ------> v2ray/Xray server  
+回落流程：WEB client <----------------- HTTPS ----------------> v2ray/Xray server <-- 回落 --> caddy（WEB server）
 
-其中 trojan+tcp+tls 还实现了兼容 trojan，即可使用 trojan 客户端连接。  
+其中 trojan+tcp+tls 或 trojan+tcp+xtls 应用还实现了兼容原版 trojan，即可使用 trojan 客户端 或 trojan-go 客户端连接。
 
 注意：
 
-1、v2ray v4.31.0 版本及以后才支持 trojan 协议。
+1、v2ray 版本不小于 v4.31.0 才支持 trojan 协议。
 
-2、caddy 不小于 v2.3.0 版才支持 Caddyfile 配置开启 h2c server。
+2、caddy 版本不小于 v2.3.0 才支持 Caddyfile 配置开启 H2C server。
 
-3、caddy 支持 http/1.1 server 与 h2c server 共用一个端口或一个进程（Unix Domain Socket 应用）。
+3、caddy 支持 HTTP/1.1 server 与 H2C server 共用一个端口或一个进程。
 
-4、caddy 发行版不支持 PROXY protocol（接收）。如要支持 PROXY protocol 需选 caddy2-proxyprotocol 插件定制编译，或下载本人 Releases 中编译好的 caddy 来使用即可。
+4、caddy 发行版不支持接收 PROXY protocol。如要支持接收 PROXY protocol 需选 caddy2-proxyprotocol 插件定制编译，或下载本人 Releases 中编译好的 caddy 来使用即可。
 
-5、本示例中 caddy 的 Caddyfile 格式配置与 json 格式配置二选一即可。若使用 caddy 申请证书及密钥，推荐使用 json 格式配置，优化更好。
+5、Xray 所需证书及密钥推荐使用 caddy 申请，配合 Xray 支持自动热重载证书及密钥，可实现 Xray 所需证书及密钥更新全自动化。
 
-6、本示例配置不要使用非 caddy（自带 ACME 客户端）的 ACME 客户端在当前服务器上申请与更新普通证书及密钥，因普通证书及密钥申请与更新需占用或监听80端口（或443端口），从而与当前应用端口冲突。
+6、本示例 caddy 的 Caddyfile 格式配置与 json 格式配置二选一即可（完全等效）。若使用 caddy 申请证书及密钥推荐使用 json 格式配置，优化更好。
 
-7、Xray 所需证书及密钥推荐使用 caddy 申请，配合 Xray（版本必须不低于v1.3.0）自动重载证书及密钥（OCSP Stapling），可实现证书及密钥申请与更新全自动化。
+7、不要使用第三方 ACME 客户端在当前服务器上以 HTTP-01 或 TLS-ALPN-01 验证方式申请与更新证书及密钥，因 HTTP-01 或 TLS-ALPN-01 验证方式申请与更新证书及密钥需监听 80 或 443 端口，从而与当前应用端口冲突。
 
 8、配置1：采用端口回落。配置2：采用进程回落。配置3：采用进程回落，且启用了 PROXY protocol。

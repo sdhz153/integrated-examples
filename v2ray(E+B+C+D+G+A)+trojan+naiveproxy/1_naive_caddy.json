@@ -5,11 +5,11 @@
   "logging": {
     "logs": {
       "default": {
-        "level": "ERROR",
         "writer": {
           "output": "file",
           "filename": "/var/log/caddy/access.log"
-        }
+        },
+        "level": "ERROR"
       }
     }
   },
@@ -21,33 +21,33 @@
           "routes": [{
             "match": [{
               "tls": {
-                "sni": ["zv.xx.yy"] //更改为自己规划对应vless+tcp+tls的域名
+                "sni": ["zv.xx.yy"] //修改为自己规划对应vless+tcp+tls的域名
               }
             }],
             "handle": [{
               "handler": "proxy",
               "upstreams": [{
-                "dial": ["127.0.0.1:8443"] //转给vless+tcp+tls本地监听端口
+                "dial": ["127.0.0.1:5443"] //转给vless+tcp+tls本地监听端口
               }]
             }]
           },
           {
             "match": [{
               "tls": {
-                "sni": ["zt.xx.yy"] //更改为自己规划对应trojan-go\trojan的域名
+                "sni": ["zt.xx.yy"] //修改为自己规划对应trojan-go或trojan的域名
               }
             }],
             "handle": [{
               "handler": "proxy",
               "upstreams": [{
-                "dial": ["127.0.0.1:6443"] //转给trojan-go\trojan本地监听端口
+                "dial": ["127.0.0.1:6443"] //转给trojan-go或trojan本地监听端口
               }]
             }]
           },
           {
             "match": [{
               "tls": {
-                "sni": ["zh.xx.yy"] //更改为自己规划对应https server的域名
+                "sni": ["zh.xx.yy"] //修改为自己规划对应https server的域名
               }
             }],
             "handle": [{
@@ -67,19 +67,16 @@
           "routes": [{
             "handle": [{
               "handler": "static_response",
-              "status_code": 301,
               "headers": {
                 "Location": ["https://{http.request.host}{http.request.uri}"] //http自动跳转https,让网站看起来更真实。
-              }
+              },
+              "status_code": 301
             }]
           }]
         },
         "h1h2c": {
           "listen": ["127.0.0.1:88"], //http/1.1与h2c server本地监听端口
           "routes": [{
-            "match": [{
-              "host": ["zv.xx.yy","zt.xx.yy"] //限定域名访问，更改为自己的对应域名。
-            }],
             "handle": [{
               "handler": "headers",
               "response": {
@@ -90,12 +87,9 @@
             },
             {
               "handler": "file_server",
-              "root": "/var/www/html" //更改为自己存放的web文件路径
+              "root": "/var/www/html" //修改为自己存放的WEB文件路径
             }]
           }],
-          "automatic_https": {
-            "disable": true //禁用自动https
-          },
           "allow_h2c": true //开启h2c server支持
         },
         "https": {
@@ -108,7 +102,7 @@
               "handler": "reverse_proxy",
               "transport": {
                 "protocol": "http",
-                "versions": ["h2c"]
+                "versions": ["h2c","2"]
               },
               "upstreams": [{
                 "dial": "127.0.0.1:2005" //转发给本机vless+h2c监听端口
@@ -123,7 +117,7 @@
               "handler": "reverse_proxy",
               "transport": {
                 "protocol": "http",
-                "versions": ["h2c"]
+                "versions": ["h2c","2"]
               },
               "upstreams": [{
                 "dial": "127.0.0.1:2009" //转发给本机vless+grpc监听端口
@@ -134,17 +128,14 @@
           {
             "handle": [{
               "handler": "forward_proxy",
-              "auth_user_deprecated": "user", //naiveproxy用户，更改为自己的。
-              "auth_pass_deprecated": "pass", //naiveproxy密码，更改为自己的。
+              "auth_user_deprecated": "user", //naiveproxy用户，修改为自己的。
+              "auth_pass_deprecated": "pass", //naiveproxy密码，修改为自己的。
               "hide_ip": true,
               "hide_via": true,
               "probe_resistance": {}
             }]
           },
           {
-            "match": [{
-              "host": ["zh.xx.yy"] //限定域名访问，更改为自己的对应域名。
-            }],
             "handle": [{
               "handler": "headers",
               "response": {
@@ -155,7 +146,7 @@
             },
             {
               "handler": "file_server",
-              "root": "/var/www/html" //更改为自己存放的web文件路径
+              "root": "/var/www/html" //修改为自己存放的WEB文件路径
             }]
           }],
           "tls_connection_policies": [{
@@ -164,10 +155,7 @@
             },
             "cipher_suites": ["TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384","TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256","TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256"],
             "alpn": ["h2","http/1.1"]
-          }],
-          "automatic_https": {
-            "disable": true //禁用自动https
-          }
+          }]
         }
       }
     },

@@ -5,24 +5,24 @@
   "logging": {
     "logs": {
       "default": {
-        "level": "ERROR",
         "writer": {
           "output": "file",
           "filename": "/var/log/caddy/access.log"
-        }
+        },
+        "level": "ERROR"
       }
     }
   },
   "apps": {
     "http": {
       "servers": {
-        "naive": {
-          "listen": [":443"], //监听端口
+        "https": {
+          "listen": [":443"], //https默认监听端口
           "routes": [{
             "handle": [{
               "handler": "forward_proxy",
-              "auth_user_deprecated": "user", //naiveproxy用户，更改为自己的。
-              "auth_pass_deprecated": "pass", //naiveproxy密码，更改为自己的。
+              "auth_user_deprecated": "user", //naiveproxy用户，修改为自己的。
+              "auth_pass_deprecated": "pass", //naiveproxy密码，修改为自己的。
               "hide_ip": true,
               "hide_via": true,
               "probe_resistance": {}
@@ -30,19 +30,26 @@
           },
           {
             "match": [{
-              "host": ["xx.yy"] //限定域名访问（禁止以ip方式访问网站），更改为自己的域名。
+              "host": ["xx.yy"] //限定域名访问（禁止以ip方式访问网站），修改为自己的域名。
             }],
             "handle": [{
-              "handler": "headers",
-              "response": {
-                "set": {
-                  "Strict-Transport-Security": ["max-age=31536000; includeSubDomains; preload"] //启用HSTS
-                }
-              }
-            },
-            {
-              "handler": "file_server",
-              "root": "/var/www/html" //更改为自己存放的web文件路径
+              "handler": "subroute",
+              "routes": [{
+                "handle": [{
+                  "handler": "headers",
+                  "response": {
+                    "set": {
+                      "Strict-Transport-Security": ["max-age=31536000; includeSubDomains; preload"] //启用HSTS
+                    }
+                  }
+                }]
+              },
+              {
+                "handle": [{
+                  "handler": "file_server",
+                  "root": "/var/www/html" //修改为自己存放的WEB文件路径
+                }]
+              }]
             }]
           }],
           "tls_connection_policies": [{
@@ -55,7 +62,7 @@
     },
     "tls": {
       "certificates": {
-        "automate": ["xx.yy"] //自动化管理域名证书（包括获取、更新证书及加载证书）。更改为自己的域名。
+        "automate": ["xx.yy"] //自动化管理域名证书（包括获取、更新证书及加载证书）。修改为自己的域名。
       }
     }
   }

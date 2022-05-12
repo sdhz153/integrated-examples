@@ -1,22 +1,24 @@
 介绍：
 
-vless+tcp+tls 与 trojan+tcp+tls 两种基础回落应用：Xray\v2ray 前置（监听443端口），以 h2 或 http/1.1 自适应协商连接，非 Xray\v2ray 的 web 连接回落给 nginx（即解除 tls 后的 web 连接转给 nginx 处理），tls 由 vless+tcp+tls 或 trojan+tcp+tls 提供及处理。
+本示例配置包含 vless+tcp+tls 或 vless+tcp+xtls 与 trojan+tcp+tls 或 trojan+tcp+xtls 应用。v2ray 或 Xray 服务端前置（监听 443 端口）处理来自墙内的 HTTPS 请求，如果是合法的 v2ray 或 Xray 客户端请求，那么为该请求提供服务（科学上网）；否则将已解除 TLS/XTLS 的流量请求回落（转发）给 nginx，由 nginx 为其提供 WEB 服务。
 
 原理：
 
-默认流程：Xray\v2ray client <------ tcp+tls ------> Xray\v2ray server  
-匹配流程：web client <----------- https ----------> Xray\v2ray server <-- 回落 --> nginx（web server）
+默认流程：v2ray/Xray client <------ TCP+TLS（HTTPS） ------> v2ray/Xray server  
+回落流程：WEB client <----------------- HTTPS ----------------> v2ray/Xray server <-- 回落 --> nginx（WEB server）
 
-其中 trojan+tcp+tls 还实现了兼容 trojan，即可使用 trojan 客户端连接。
+其中 trojan+tcp+tls 或 trojan+tcp+xtls 应用还实现了兼容原版 trojan，即可使用 trojan 客户端 或 trojan-go 客户端连接。
 
 注意：
 
-1、v2ray v4.31.0 版本及以后才支持 trojan 协议。
+1、v2ray 版本不小于 v4.43.0 才完美支持 trojan 协议。
 
-2、nginx 支持 h2c server，但不支持 http/1.1 server 与 h2c server 共用一个端口或一个进程（Unix Domain Socket 应用）；故回落配置就必须分成 http/1.1 回落与 h2 回落两部分，以便分别对应 nginx 的 http/1.1 server 与 h2c server。
+2、nginx 支持 H2C server，需要 nginx 包含 http_v2_module 模块。
 
-3、nginx 预编译程序包可能不带支持 PROXY protocol 协议的模块。如要使用此项协议应用，需加 http_realip_module（必须加） 及 stream_realip_module（可选加） 两模块构建自定义模板，再进行源代码编译和安装。另编译时选取源代码版本建议不要低于1.13.11。
+3、nginx 支持 HTTP 功能块接收 PROXY protocol，需要 nginx 包含 http_realip_module 模块。
 
-4、本示例配置不要使用 ACME 客户端在当前服务器上申请与更新普通证书及密钥，因普通证书及密钥申请与更新需要占用或监听80端口（或443端口），从而与当前应用端口冲突。
+4、nginx 支持 H2C server，但不支持 HTTP/1.1 server 与 H2C server 共用一个端口或一个进程；故回落分成 http/1.1 回落与 h2 回落分别对应 nginx 的 HTTP/1.1 server 与 H2C server。
 
-5、配置1：采用端口回落。配置2：采用进程回落。配置3：采用进程回落，且启用了 PROXY protocol。
+5、不要使用 ACME 客户端在当前服务器上以 HTTP-01 或 TLS-ALPN-01 验证方式申请与更新证书及密钥，因 HTTP-01 或 TLS-ALPN-01 验证方式申请与更新证书及密钥需监听 80 或 443 端口，从而与当前应用端口冲突。
+
+6、配置1：采用端口回落。配置2：采用进程回落。配置3：采用进程回落，且启用了 PROXY protocol。
